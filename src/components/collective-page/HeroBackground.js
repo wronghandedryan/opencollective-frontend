@@ -30,6 +30,8 @@ const BackgroundContainer = styled.div`
 
     @media (min-width: 1440px) {
       mask-size: 75% 100%;
+      background-size: 75%;
+      background-position: top right;
     }
   }
 `;
