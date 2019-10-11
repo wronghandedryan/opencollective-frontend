@@ -7,11 +7,11 @@ import { Flex, Box } from '@rebass/grid';
 import { get } from 'lodash';
 import { graphql } from 'react-apollo';
 import moment from 'moment';
+import gql from 'graphql-tag';
 
 import { RadioButtonChecked } from 'styled-icons/material/RadioButtonChecked';
 import { RadioButtonUnchecked } from 'styled-icons/material/RadioButtonUnchecked';
 
-import { getCollectiveSourcePaymentMethodsQuery } from '../lib/graphql/queries';
 import { reportValidityHTML5 } from '../lib/utils';
 import { createVirtualCardsMutationQuery } from '../lib/graphql/mutations';
 import MessageBox from './MessageBox';
@@ -23,8 +23,10 @@ import Link from './Link';
 import StyledMultiEmailInput from './StyledMultiEmailInput';
 import { H3 } from './Text';
 import StyledInput from './StyledInput';
-import InputField from './InputField';
 import CreateVirtualCardsSuccess from './CreateVirtualCardsSuccess';
+import CollectivePicker from './CollectivePicker';
+import CollectivePickerAsync from './CollectivePickerAsync';
+import { CollectiveType } from '../lib/constants/collectives';
 
 const MIN_AMOUNT = 5;
 const MAX_AMOUNT = 1000000;
@@ -33,6 +35,15 @@ const messages = defineMessages({
   emailCustomMessage: {
     id: 'virtualCards.email.customMessage',
     defaultMessage: 'Will be sent in the invitation email',
+  },
+  limitToHostsPlaceholder: {
+    id: 'virtualCards.limitToHosts.placeholder',
+    defaultMessage: 'All hosts',
+  },
+  limitToCollectivesPlaceholder: {
+    id: 'virtualCards.limitToCollectives.placeholder',
+    defaultMessage:
+      'All collectives {nbHosts, plural, =0 {} =1 {under the selected host} other {under the selected hosts}}',
   },
 });
 
@@ -115,6 +126,20 @@ class CreateVirtualCardsForm extends Component {
     collectiveSlug: PropTypes.string.isRequired,
     currency: PropTypes.string.isRequired,
     createVirtualCards: PropTypes.func.isRequired,
+    data: PropTypes.shape({
+      loading: PropTypes.bool,
+      error: PropTypes.object,
+      Collective: PropTypes.shape({
+        paymentMethods: PropTypes.array,
+      }),
+      allHosts: PropTypes.shape({
+        collectives: PropTypes.arrayOf(
+          PropTypes.shape({
+            id: PropTypes.number,
+          }),
+        ),
+      }),
+    }),
     /** @ignore from injectIntl */
     intl: PropTypes.object,
   };
@@ -127,10 +152,11 @@ class CreateVirtualCardsForm extends Component {
       deliverType: 'email', // email or manual
       values: {
         amount: MIN_AMOUNT,
-        onlyOpensource: false,
         emails: [],
         customMessage: '',
         numberOfVirtualCards: 1,
+        limitedToHostCollectiveIds: [],
+        limitedToCollectiveIds: [],
         expiryDate: moment()
           .add(12, 'months')
           .format('YYYY-MM-DD'),
@@ -186,7 +212,8 @@ class CreateVirtualCardsForm extends Component {
       const params = {
         amount: Math.round(values.amount * 100),
         PaymentMethodId: values.PaymentMethodId || this.getDefaultPaymentMethod().id,
-        limitedToOpenSourceCollectives: values.onlyOpensource,
+        limitedToHostCollectiveIds: values.limitedToHostCollectiveIds,
+        limitedToCollectiveIds: values.limitedToCollectiveIds,
         expiryDate: values.expiryDate,
       };
 
@@ -333,11 +360,17 @@ class CreateVirtualCardsForm extends Component {
     );
   }
 
+  optionsToIdsList(options) {
+    return options ? options.map(({ value }) => value.id) : [];
+  }
+
   render() {
-    const loading = get(this.props, 'data.loading');
-    const error = get(this.props, 'data.error');
-    const paymentMethods = get(this.props, 'data.Collective.paymentMethods', []);
+    const { data, intl, collectiveSlug, currency } = this.props;
     const { submitting, values, createdVirtualCards, serverError, deliverType } = this.state;
+    const loading = get(data, 'loading');
+    const error = get(data, 'error');
+    const paymentMethods = get(data, 'Collective.paymentMethods', []);
+    const hosts = get(data, 'allHosts.collectives', []);
 
     if (loading) {
       return <Loading />;
@@ -355,7 +388,7 @@ class CreateVirtualCardsForm extends Component {
       <CreateVirtualCardsSuccess
         cards={createdVirtualCards}
         deliverType={deliverType}
-        collectiveSlug={this.props.collectiveSlug}
+        collectiveSlug={collectiveSlug}
       />
     ) : (
       <form ref={this.form} onSubmit={this.onSubmit}>
@@ -366,8 +399,8 @@ class CreateVirtualCardsForm extends Component {
           >
             <StyledInputAmount
               id="virtualcard-amount"
-              currency={this.props.currency}
-              prepend={this.props.currency}
+              currency={currency}
+              prepend={currency}
               onChange={e => this.onChange('amount', e.target.value)}
               error={this.getError('amount')}
               value={values.amount}
@@ -391,32 +424,6 @@ class CreateVirtualCardsForm extends Component {
           </InlineField>
 
           <InlineField
-            name="onlyOpensource"
-            isLabelClickable
-            label={
-              <FormattedMessage
-                id="virtualCards.create.onlyOpensource"
-                defaultMessage="Limit to collectives hosted by the {openSourceCollectiveLink}"
-                values={{
-                  openSourceCollectiveLink: (
-                    <Link route="collective" params={{ slug: 'opensource' }}>
-                      Open Source Collective 501c6 (Non Profit)
-                    </Link>
-                  ),
-                }}
-              />
-            }
-          >
-            <InputField
-              id="virtualcard-onlyOpensource"
-              name="onlyOpensource"
-              defaultValue={values.onlyOpensource}
-              onChange={value => this.onChange('onlyOpensource', value)}
-              type="switch"
-            />
-          </InlineField>
-
-          <InlineField
             name="expiryDate"
             isLabelClickable
             label={<FormattedMessage id="virtualCards.create.expiryDate" defaultMessage="Expiry date" />}
@@ -431,6 +438,49 @@ class CreateVirtualCardsForm extends Component {
               min={moment()
                 .add(1, 'day')
                 .format('YYYY-MM-DD')}
+            />
+          </InlineField>
+
+          <InlineField
+            name="limitToHosts"
+            label={
+              <FormattedMessage id="virtualCards.create.limitToHosts" defaultMessage="Limit to the following hosts" />
+            }
+          >
+            <CollectivePicker
+              placeholder={intl.formatMessage(messages.limitToHostsPlaceholder)}
+              disabled={hosts.length === 0}
+              minWidth={300}
+              maxWidth={600}
+              sortFunc={collectives => collectives} /** Sort is handled by the API */
+              groupByType={false}
+              collectives={hosts}
+              onChange={options => this.onChange('limitedToHostCollectiveIds', this.optionsToIdsList(options))}
+              isMulti
+            />
+          </InlineField>
+
+          <InlineField
+            name="limitToCollectives"
+            label={
+              <FormattedMessage
+                id="virtualCards.create.limitToCollectives"
+                defaultMessage="Limit to the following collectives"
+              />
+            }
+          >
+            <CollectivePickerAsync
+              isMulti
+              preload={values.limitedToHostCollectiveIds.length > 0}
+              minWidth={300}
+              maxWidth={600}
+              sortFunc={collectives => collectives} /** Sort is handled by the API */
+              types={[CollectiveType.COLLECTIVE]}
+              onChange={options => this.onChange('limitedToCollectiveIds', this.optionsToIdsList(options))}
+              hostCollectiveIds={values.limitedToHostCollectiveIds}
+              placeholder={intl.formatMessage(messages.limitToCollectivesPlaceholder, {
+                nbHosts: values.limitedToHostCollectiveIds.length,
+              })}
             />
           </InlineField>
 
@@ -470,7 +520,41 @@ class CreateVirtualCardsForm extends Component {
   }
 }
 
-const addPaymentMethods = graphql(getCollectiveSourcePaymentMethodsQuery, {
+/**
+ * A query to get a collective source payment methods. This will not return
+ * virtual cards, as a virtual card cannot be used as a source payment method
+ * for another payment method.
+ */
+export const getCollectiveSourcePaymentMethodsQuery = gql`
+  query Collective($id: Int) {
+    Collective(id: $id) {
+      id
+      paymentMethods(types: ["creditcard", "prepaid"], hasBalanceAboveZero: true) {
+        id
+        uuid
+        name
+        data
+        monthlyLimitPerMember
+        service
+        type
+        balance
+        currency
+        expiryDate
+      }
+    }
+    allHosts(limit: 100, onlyOpenHosts: false, minNbCollectivesHosted: 1) {
+      collectives {
+        id
+        type
+        name
+        slug
+        imageUrl
+      }
+    }
+  }
+`;
+
+const addData = graphql(getCollectiveSourcePaymentMethodsQuery, {
   options: props => ({ variables: { id: props.collectiveId } }),
 });
 
@@ -486,4 +570,4 @@ const addCreateVirtualCardsMutation = graphql(createVirtualCardsMutationQuery, {
   }),
 });
 
-export default injectIntl(addPaymentMethods(addCreateVirtualCardsMutation(CreateVirtualCardsForm)));
+export default injectIntl(addData(addCreateVirtualCardsMutation(CreateVirtualCardsForm)));
