@@ -154,9 +154,15 @@ class CreateOrderPage extends React.Component {
   renderPageContent() {
     const { data, intl } = this.props;
 
-    if (!data.Collective.host) {
+    console.log(data);
+
+    if (data.Collective.isHost) {
+      data.Collective.host = data.Collective;
+    }
+
+    if (!data.Collective.host && !data.Collective.isHost) {
       return this.renderMessage('info', intl.formatMessage(messages.missingHost));
-    } else if (!data.Collective.isActive) {
+    } else if (!data.Collective.isActive && data.Collective.type !== 'ORGANIZATION') {
       return this.renderMessage('info', intl.formatMessage(messages.inactiveCollective));
     } else if (this.props.tierId && !data.Tier) {
       return this.renderMessage('warning', intl.formatMessage(messages.missingTier), true);
@@ -223,6 +229,7 @@ const collectiveFields = `
   tags
   settings
   isActive
+  isHost
   location {
     country
   }

@@ -220,6 +220,7 @@ const i18nSection = defineMessages({
 // Define default sections based on collective type
 const DEFAULT_SECTIONS = {
   [CollectiveType.ORGANIZATION]: [
+    Sections.CONTRIBUTE,
     Sections.CONTRIBUTIONS,
     Sections.CONTRIBUTORS,
     Sections.UPDATES,
@@ -269,7 +270,7 @@ export const getSectionsForCollective = (collective, isAdmin) => {
   const isEvent = collective.type === CollectiveType.EVENT;
 
   // Can't contribute anymore if the collective is archived or has no host
-  const hasContribute = collective.isApproved;
+  const hasContribute = collective.isApproved || collective.type === CollectiveType.ORGANIZATION;
   const hasOtherWaysToContribute =
     !isEvent && (collective.events?.length > 0 || collective.connectedCollectives?.length > 0);
   if (!hasContribute && !hasOtherWaysToContribute && !isAdmin) {

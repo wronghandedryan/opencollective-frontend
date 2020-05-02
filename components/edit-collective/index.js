@@ -47,6 +47,8 @@ class EditCollective extends React.Component {
   }
 
   async editCollective(updatedCollective) {
+    console.log('editCollective', updatedCollective);
+
     const collective = { ...updatedCollective };
 
     if (typeof collective.tags === 'string') {

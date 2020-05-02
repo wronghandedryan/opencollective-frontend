@@ -192,6 +192,7 @@ class CreateExpensePage extends React.Component {
   }
 
   getPayoutProfiles = memoizeOne(loggedInAccount => {
+    console.log('loggedInAccount', loggedInAccount);
     if (!loggedInAccount) {
       return [];
     } else {

@@ -146,6 +146,7 @@ class CollectivePage extends Component {
   };
 
   renderSection(section) {
+    console.log('renderSection', section);
     switch (section) {
       case Sections.ABOUT:
         return <SectionAbout collective={this.props.collective} canEdit={this.props.isAdmin} />;

@@ -152,10 +152,15 @@ class SectionContribute extends React.PureComponent {
     const hasNoContributorForEvents = !events.find(event => event.contributors.length > 0);
     const sortedTiers = this.sortTiers(this.removeTickets(tiers));
     const isEvent = collective.type === CollectiveType.EVENT;
-    const hasContribute = collective.isActive || isAdmin;
+    const hasContribute = collective.isActive || collective.type === CollectiveType.ORGANIZATION || isAdmin;
     const hasOtherWaysToContribute = !isEvent && (isAdmin || events.length > 0 || connectedCollectives.length > 0);
-    const isActive = collective.isActive;
+    const isActive = collective.isActive || collective.isHost;
     const hasHost = collective.host;
+    const isHost = collective.isHost;
+
+    console.log('collective', collective);
+
+    console.log('hasContribute', hasContribute);
 
     /*
     cases
@@ -176,7 +181,7 @@ class SectionContribute extends React.PureComponent {
 
     return (
       <Box pt={[4, 5]}>
-        {isAdmin && !hasHost && (
+        {isAdmin && !hasHost && !isHost && (
           <ContainerSectionContent pt={5} pb={3}>
             <SectionTitle mb={24}>
               <FormattedMessage id="contributions" defaultMessage="Contributions" />
@@ -211,7 +216,7 @@ class SectionContribute extends React.PureComponent {
           </ContainerSectionContent>
         )}
 
-        {((isAdmin && hasHost) || (!isAdmin && isActive)) && (
+        {((isAdmin && hasHost) || (isAdmin && isHost) || (!isAdmin && isActive)) && (
           <Fragment>
             <ContainerSectionContent>
               <SectionTitle>
@@ -242,7 +247,7 @@ class SectionContribute extends React.PureComponent {
                             contributors={financialContributorsWithoutTier}
                             stats={contributorsStats}
                             hideContributors={hasNoContributor}
-                            disableCTA={!collective.isActive}
+                            disableCTA={!isActive}
                           />
                         </ContributeCardContainer>
                         {sortedTiers.map(tier => (
@@ -251,7 +256,7 @@ class SectionContribute extends React.PureComponent {
                               collective={collective}
                               tier={tier}
                               hideContributors={hasNoContributor}
-                              disableCTA={!collective.isActive}
+                              disableCTA={!isActive}
                             />
                           </ContributeCardContainer>
                         ))}
