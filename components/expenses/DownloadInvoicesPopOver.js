@@ -113,7 +113,7 @@ class Overlay extends React.Component {
     );
     const dateMonth = moment.utc(`${this.state.year}${month}`, 'YYYYMM');
     const dateFrom = dateMonth.toISOString();
-    const dateTo = dateMonth.endOf('month').toISOString();
+    const dateTo = dateMonth.endOf('month').subtract(1, 'month').toISOString();
     const month2digit = month < 10 ? `0${month}` : month;
 
     return (
