@@ -21,6 +21,7 @@ import 'react-mde/lib/styles/css/react-mde-all.css';
 import 'trix/dist/trix.css';
 import '../public/static/styles/app.css';
 import '../public/static/styles/react-tags.css';
+import 'emoji-mart/css/emoji-mart.css';
 
 Router.onRouteChangeStart = () => NProgress.start();
 

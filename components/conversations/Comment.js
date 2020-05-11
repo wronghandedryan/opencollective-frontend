@@ -20,9 +20,13 @@ import LinkCollective from '../LinkCollective';
 import MessageBox from '../MessageBox';
 import RichTextEditor from '../RichTextEditor';
 import StyledButton from '../StyledButton';
-import { P } from '../Text';
+import { P, Span } from '../Text';
 
 import { CommentFieldsFragment } from './graphql';
+import StyledLink from '../StyledLink';
+import { InsertEmoticon } from '@styled-icons/material';
+import { Button, OverlayTrigger, Popover, Row } from 'react-bootstrap';
+import { Emoji } from 'emoji-mart';
 
 const CommentBtn = styled(StyledButton)`
   height: 32px;
@@ -134,9 +138,21 @@ AdminActionButtons.propTypes = {
  *
  * /!\ Can only be used with data from API V2.
  */
-const Comment = ({ comment, canEdit, canDelete, withoutActions, maxCommentHeight, isConversationRoot, onDelete }) => {
+const Comment = ({
+  comment,
+  canEdit,
+  canDelete,
+  withoutActions,
+  maxCommentHeight,
+  isConversationRoot,
+  onDelete,
+  reactions = [],
+}) => {
   const [isEditing, setEditing] = React.useState(false);
+  const [selectedReactions, setSelectedReactions] = React.useState(reactions);
   const hasActions = !withoutActions && !isEditing && (canEdit || canDelete);
+  const emojiFirstRow = ['thumbsup', 'thumbsdown', 'smiley', 'tada'];
+  const emojiSecondRow = ['confused', 'heart', 'rocket', 'eyes'];
 
   const actionButtons =
     withoutActions || isEditing ? null : (
@@ -153,6 +169,36 @@ const Comment = ({ comment, canEdit, canDelete, withoutActions, maxCommentHeight
         )}
       </Flex>
     );
+
+  const handleEmojiSelect = emoji => {
+    if (!selectedReactions.includes(emoji)) setSelectedReactions(selectedReactions.concat(emoji));
+  };
+
+  const popover = (
+    <Popover id="reaction-popover">
+      <div className="popover-title">Pick your reaction</div>
+      <div className="popover-content">
+        <Row>
+          {emojiFirstRow.map(emoji => {
+            return (
+              <Button key={emoji} bsStyle="link" onClick={() => handleEmojiSelect(emoji)}>
+                <Emoji emoji={{ id: emoji }} size={18} />
+              </Button>
+            );
+          })}
+        </Row>
+        <Row>
+          {emojiSecondRow.map(emoji => {
+            return (
+              <Button key={emoji} bsStyle="link" onClick={() => handleEmojiSelect(emoji)}>
+                <Emoji emoji={{ id: emoji }} size={18} />
+              </Button>
+            );
+          })}
+        </Row>
+      </div>
+    </Popover>
+  );
 
   return (
     <Container width="100%" data-cy="comment">
@@ -209,6 +255,33 @@ const Comment = ({ comment, canEdit, canDelete, withoutActions, maxCommentHeight
             )
           }
         </InlineEditField>
+        {selectedReactions.map(emoji => {
+          return (
+            <StyledLink
+              disabled
+              buttonStyle="standard"
+              buttonSize="tiny"
+              display="inline-block"
+              mt={3}
+              mr={2}
+              whiteSpace="nowrap"
+            >
+              <Emoji emoji={emoji} size={12} />
+            </StyledLink>
+          );
+        })}
+        <OverlayTrigger rootClose trigger="click" placement="bottom" overlay={popover}>
+          <StyledLink
+            textAlign="center"
+            buttonStyle="standard"
+            buttonSize="tiny"
+            display="inline-block"
+            mt={3}
+            whiteSpace="nowrap"
+          >
+            <InsertEmoticon size="1.2em"></InsertEmoticon>
+          </StyledLink>
+        </OverlayTrigger>
       </Box>
       <Hide md lg mt={3}>
         {actionButtons}
@@ -222,6 +295,10 @@ Comment.propTypes = {
     id: PropTypes.string.isRequired,
     html: PropTypes.string,
     createdAt: PropTypes.string,
+    reactions: PropTypes.shape({
+      name: PropTypes.string,
+      count: PropTypes.number,
+    }),
     fromCollective: PropTypes.shape({
       name: PropTypes.string,
     }),
