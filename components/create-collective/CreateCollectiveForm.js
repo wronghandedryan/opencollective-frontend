@@ -282,7 +282,6 @@ class CreateCollectiveForm extends React.Component {
                           />
                         }
                         required
-                        checked={this.state.tosChecked}
                         onChange={({ checked }) => {
                           this.setState({ tos: checked });
                         }}
@@ -305,7 +304,6 @@ class CreateCollectiveForm extends React.Component {
                             />
                           }
                           required
-                          checked={this.state.hostTosChecked}
                           onChange={({ checked }) => {
                             this.setState({ hostTos: checked });
                           }}
