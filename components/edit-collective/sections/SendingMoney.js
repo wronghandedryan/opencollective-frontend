@@ -19,6 +19,10 @@ class SendingMoney extends React.Component {
     if (hasFeature(this.props.collective, FEATURES.TRANSFERWISE) || parseToBoolean(process.env.TRANSFERWISE_ENABLED)) {
       services.push('transferwise');
     }
+    if (hasFeature(this.props.collective, FEATURES.PAYPAL_PAYOUTS)) {
+      services.push('paypal');
+    }
+
     return (
       <Fragment>
         <H3>
