@@ -34,8 +34,6 @@ describe('Create collective from Github', () => {
     cy.get('[data-cy=ccf-error-message]').contains('Please accept the terms of service');
     cy.get('[data-cy=custom-checkbox').click();
     cy.get('[data-cy=ccf-form-submit]').click();
-    cy.location().should(location => {
-      expect(location.search).to.include('?status=collectiveCreated');
-    });
+    cy.url().should('include', '/adblockpluschrome/onboarding');
   });
 });
