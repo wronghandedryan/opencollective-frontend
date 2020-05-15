@@ -1,5 +1,5 @@
 describe('Create collective from Github', () => {
-  it.skip('Should submit create github page', () => {
+  it('Should submit create github page', () => {
     cy.server();
     cy.route({
       method: 'GET',
@@ -8,18 +8,18 @@ describe('Create collective from Github', () => {
         {
           description: 'Adblock Plus browser extension',
           fork: true,
-          full_name: 'flickz/adblockpluschrome',
+          full_name: 'testuseradmingithub/adblockpluschrome',
           name: 'adblockpluschrome',
-          owner: { login: 'flickz', type: 'Organization' },
+          owner: { login: 'testuseradmingithub', type: 'Organization' },
           stargazers_count: 113,
         },
         {
           description:
             'A new form of association, transparent by design. Please report issues there. Feature requests and ideas welcome!',
           fork: true,
-          full_name: 'flickz/jobtweets',
+          full_name: 'testuseradmingithub/jobtweets',
           name: 'JobTweets',
-          owner: { login: 'flickz', type: 'User' },
+          owner: { login: 'testuseradmingithub', type: 'User' },
           stargazers_count: 103,
         },
       ],
