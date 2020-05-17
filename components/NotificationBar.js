@@ -4,7 +4,6 @@ import classNames from 'classnames';
 import styled from 'styled-components';
 
 import AcceptRejectButtons from './host-dashboard/AcceptRejectButtons';
-import AppRejectionReasonModal from '../components/host-dashboard/AppRejectionReasonModal';
 
 const logo = '/static/images/opencollective-icon.svg';
 
