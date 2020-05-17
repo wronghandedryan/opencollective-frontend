@@ -1,11 +1,11 @@
 import React, { Fragment, useState } from 'react';
 import PropTypes from 'prop-types';
 import { FormattedMessage } from 'react-intl';
-import { Mutation } from '@apollo/react-components';
 import gql from 'graphql-tag';
+import { Mutation } from '@apollo/react-components';
 
-import StyledButton from '../StyledButton';
 import AppRejectionReasonModal from './AppRejectionReasonModal';
+import StyledButton from '../StyledButton';
 
 const ApproveCollectiveMutation = gql`
   mutation approveCollective($id: Int!) {
